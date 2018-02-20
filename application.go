@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const UserAgent = "InteractiveSolutions/GoCommunication-1.0"
 
 type Application interface {
-	SendEmail(id, locale, email string, params map[string]interface{})
-	SendSms(id, locale, number string, params map[string]interface{})
+	SendEmail(id, locale, email string, params map[string]interface{}) error
+	SendSms(id, locale, number string, params map[string]interface{}) error
 	Shutdown(ctx context.Context)
 }
 
@@ -37,13 +38,25 @@ func SetDefaultEmailTransport(transport EmailTransport) AppOption {
 	}
 }
 
+func SetTemplateRepo(repo TemplateRepository) AppOption {
+	return func(a *application) {
+		a.templateRepo = repo
+	}
+}
+
+func SetTransactionRepo(repo TransactionRepository) AppOption {
+	return func(a *application) {
+		a.transactionRepo = repo
+	}
+}
+
 type application struct {
 	logger logrus.FieldLogger
 
 	workerCtx    context.Context
 	workerCancel context.CancelFunc
 
-	workerQueue  chan *Job
+	workerQueue chan *Job
 
 	templateRepo    TemplateRepository
 	transactionRepo TransactionRepository
@@ -53,7 +66,7 @@ type application struct {
 	defaultEmailTransport EmailTransport
 }
 
-func NewApplication(options ... AppOption) (Application, error) {
+func NewApplication(options ...AppOption) (Application, error) {
 	app := &application{
 		logger:      logrus.NewLogger(),
 		workerQueue: make(chan *Job, 1000),
@@ -81,7 +94,7 @@ func NewApplication(options ... AppOption) (Application, error) {
 		return app, err
 	}
 
-	for _, job := range jobs{
+	for _, job := range jobs {
 		app.queue(&job)
 	}
 

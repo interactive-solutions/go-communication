@@ -9,7 +9,7 @@ import (
 type JobType uint
 
 const (
-	JobSms   JobType = iota
+	JobSms JobType = iota
 	JobEmail
 )
 

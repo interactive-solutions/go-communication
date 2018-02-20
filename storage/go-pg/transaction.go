@@ -14,5 +14,3 @@ func NewTransactionRepository(db *pg.DB) communication.TransactionRepository {
 		db: db,
 	}
 }
-
-

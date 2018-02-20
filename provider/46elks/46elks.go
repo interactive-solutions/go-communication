@@ -43,7 +43,7 @@ type elks struct {
 	password string
 }
 
-func New46ElksClient(options ... ElkOption) (*elks, error) {
+func New46ElksClient(options ...ElkOption) (*elks, error) {
 	client := &elks{
 		client: retryablehttp.NewClient(),
 	}

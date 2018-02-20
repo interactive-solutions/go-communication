@@ -14,5 +14,3 @@ func NewTemplateRepository(db *pg.DB) communication.TemplateRepository {
 		db: db,
 	}
 }
-
-
