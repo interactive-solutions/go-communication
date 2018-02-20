@@ -14,25 +14,6 @@ import (
 
 const elksApi = "https://api.46elks.com/a1/sms"
 
-type ElkOption func(elk *elks) error
-
-func SetBasicAuth(username, password string) ElkOption {
-	return func(e *elks) error {
-		e.username = username
-		e.password = password
-
-		return nil
-	}
-}
-
-func SetFrom(from string) ElkOption {
-	return func(e *elks) error {
-		e.from = from
-
-		return nil
-	}
-}
-
 // Elks in an implementation for 46elks
 type elks struct {
 	client *retryablehttp.Client
@@ -43,26 +24,14 @@ type elks struct {
 	password string
 }
 
-func New46ElksClient(options ...ElkOption) (*elks, error) {
-	client := &elks{
+func New46ElksClient(from, username, password string) *elks {
+	return &elks{
 		client: retryablehttp.NewClient(),
-	}
 
-	for _, option := range options {
-		if err := option(client); err != nil {
-			return client, err
-		}
+		from:     from,
+		username: username,
+		password: password,
 	}
-
-	if client.username == "" || client.password == "" {
-		return client, errors.New("Missing username/password")
-	}
-
-	if client.from == "" {
-		return client, errors.New("missing from number/name")
-	}
-
-	return client, nil
 }
 
 func (e *elks) Send(ctx context.Context, number string, message string) error {
