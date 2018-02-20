@@ -50,6 +50,12 @@ func SetTransactionRepo(repo TransactionRepository) AppOption {
 	}
 }
 
+func SetWorkerCount(count int) AppOption {
+	return func(a *application) {
+		a.workerCount = count
+	}
+}
+
 type application struct {
 	logger logrus.FieldLogger
 
@@ -57,6 +63,7 @@ type application struct {
 	workerCancel context.CancelFunc
 
 	workerQueue chan *Job
+	workerCount int
 
 	templateRepo    TemplateRepository
 	transactionRepo TransactionRepository
@@ -68,8 +75,10 @@ type application struct {
 
 func NewApplication(options ...AppOption) (Application, error) {
 	app := &application{
-		logger:      logrus.NewLogger(),
+		logger: logrus.NewLogger(),
+
 		workerQueue: make(chan *Job, 1000),
+		workerCount: 5,
 	}
 
 	for _, option := range options {
@@ -85,7 +94,7 @@ func NewApplication(options ...AppOption) (Application, error) {
 
 	app.workerCancel = cancel
 
-	for i := 0; i <= 5; i++ {
+	for i := 0; i <= app.workerCount; i++ {
 		go app.worker(ctx)
 	}
 
@@ -178,7 +187,12 @@ func (a *application) worker(ctx context.Context) {
 			}
 
 			if err := a.process(job); err != nil {
-				// todo: log
+				a.logger.
+					WithField("job", job).
+					WithError(err).
+					Error("failed to process job")
+
+				continue
 			}
 
 			now := time.Now()
@@ -186,7 +200,10 @@ func (a *application) worker(ctx context.Context) {
 			job.SendAt = &now
 
 			if err := a.transactionRepo.Update(job); err != nil {
-				// todo: log
+				a.logger.
+					WithField("job", job).
+					WithError(err).
+					Error("failed to update job in transaction repo")
 			}
 		}
 	}
