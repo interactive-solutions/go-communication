@@ -162,6 +162,8 @@ func (a *application) SendSms(id, locale, number string, params map[string]inter
 	}
 
 	a.queue(job)
+
+	return nil
 }
 
 func (a *application) Shutdown(ctx context.Context) {
