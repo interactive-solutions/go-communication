@@ -75,7 +75,7 @@ type application struct {
 
 func NewApplication(options ...AppOption) (Application, error) {
 	app := &application{
-		logger: logrus.NewLogger(),
+		logger: logrus.New(),
 
 		workerQueue: make(chan *Job, 1000),
 		workerCount: 5,
