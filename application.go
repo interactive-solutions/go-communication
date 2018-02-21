@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/satori/go.uuid"
 )
 
 const UserAgent = "InteractiveSolutions/GoCommunication-1.0"
@@ -128,11 +129,13 @@ func (a *application) SendEmail(id, locale, email string, params map[string]inte
 	}
 
 	job := &Job{
+		Uuid:       uuid.NewV4(),
 		Type:       JobEmail,
 		TemplateId: id,
 		Locale:     locale,
 		Target:     email,
 		Params:     params,
+		CreatedAt:  time.Now(),
 	}
 
 	if err := a.transactionRepo.Create(job); err != nil {
@@ -150,11 +153,13 @@ func (a *application) SendSms(id, locale, number string, params map[string]inter
 	}
 
 	job := &Job{
+		Uuid:       uuid.NewV4(),
 		Type:       JobSms,
 		TemplateId: id,
 		Locale:     locale,
 		Target:     number,
 		Params:     params,
+		CreatedAt:  time.Now(),
 	}
 
 	if err := a.transactionRepo.Create(job); err != nil {
