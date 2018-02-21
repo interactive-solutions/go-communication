@@ -25,7 +25,7 @@ func (repo *transactionRepo) GetPending() ([]communication.Job, error) {
 	var jobs []communication.Job
 	var wrappedJobs []jobWrapper
 
-	if err := repo.db.Model(&wrappedJobs).Where("send_at is null").Select(); err != nil {
+	if err := repo.db.Model(&wrappedJobs).Where("sent_at is null").Select(); err != nil {
 		if err == pg.ErrNoRows {
 			return jobs, nil
 		}
