@@ -250,7 +250,11 @@ func (a *application) getTemplate(templateId, locale string) (Template, error) {
 		return a.getFallbackTemplate(templateId)
 
 	case TemplateNotFoundErr:
-		a.createMockTemplate(templateId, locale)
+		if err := a.createMockTemplate(templateId, locale); err != nil {
+			a.logger.
+				WithError(err).
+				Error("Failed to create mock template")
+		}
 
 		return a.getFallbackTemplate(templateId)
 
