@@ -23,6 +23,6 @@ type Job struct {
 
 	Params map[string]interface{} `json:"params"`
 
-	SendAt    *time.Time `json:"sendAt"`
+	SentAt    *time.Time `json:"sentAt"`
 	CreatedAt time.Time  `json:"createdAt"`
 }
