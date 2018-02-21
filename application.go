@@ -199,7 +199,7 @@ func (a *application) worker(ctx context.Context) {
 
 			now := time.Now()
 
-			job.sentAt = &now
+			job.SentAt = &now
 
 			if err := a.transactionRepo.Update(job); err != nil {
 				a.logger.
