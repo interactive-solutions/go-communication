@@ -48,6 +48,7 @@ func (e *elks) Send(ctx context.Context, number string, message string) error {
 	}
 
 	req.Request = req.WithContext(ctx)
+	req.SetBasicAuth(e.username, e.password)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Content-Length", strconv.Itoa(len(body)))
 	req.Header.Set("User-Agent", communication.UserAgent)
