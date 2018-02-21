@@ -1,8 +1,8 @@
 package gopg
 
 import (
+	"github.com/go-pg/pg"
 	"github.com/interactive-solutions/go-communication"
-	"gopkg.in/pg.v5"
 )
 
 func NewTransactionRepository(db *pg.DB) communication.TransactionRepository {
