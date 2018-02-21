@@ -15,6 +15,12 @@ type templateRepository struct {
 	db *pg.DB
 }
 
+type templateWrapper struct {
+	*communication.Template
+
+	TableName struct{} `sql:"communication_templates,alias:ct" json:"-"`
+}
+
 func (repo *templateRepository) Get(id, locale string) (communication.Template, error) {
 	template := communication.Template{}
 
@@ -30,13 +36,13 @@ func (repo *templateRepository) Get(id, locale string) (communication.Template, 
 }
 
 func (repo *templateRepository) Create(template *communication.Template) error {
-	return repo.db.Insert(template)
+	return repo.db.Insert(&templateWrapper{Template: template})
 }
 
 func (repo *templateRepository) Update(template *communication.Template) error {
-	return repo.db.Update(template)
+	return repo.db.Update(&templateWrapper{Template: template})
 }
 
 func (repo *templateRepository) Delete(template *communication.Template) error {
-	return repo.db.Delete(template)
+	return repo.db.Delete(&templateWrapper{Template: template})
 }

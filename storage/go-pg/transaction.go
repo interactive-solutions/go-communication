@@ -11,14 +11,21 @@ func NewTransactionRepository(db *pg.DB) communication.TransactionRepository {
 	}
 }
 
+type jobWrapper struct {
+	TableName struct{} `sql:"communication_jobs, alias:jb" json:"-"`
+
+	*communication.Job
+}
+
 type transactionRepo struct {
 	db *pg.DB
 }
 
 func (repo *transactionRepo) GetPending() ([]communication.Job, error) {
 	var jobs []communication.Job
+	var wrappedJobs []jobWrapper
 
-	if err := repo.db.Model(&jobs).Where("send_at is null").Select(); err != nil {
+	if err := repo.db.Model(&wrappedJobs).Where("send_at is null").Select(); err != nil {
 		if err == pg.ErrNoRows {
 			return jobs, nil
 		}
@@ -26,13 +33,17 @@ func (repo *transactionRepo) GetPending() ([]communication.Job, error) {
 		return jobs, err
 	}
 
+	for _, j := range wrappedJobs {
+		jobs = append(jobs, *j.Job)
+	}
+
 	return jobs, nil
 }
 
 func (repo *transactionRepo) Create(job *communication.Job) error {
-	return repo.db.Insert(job)
+	return repo.db.Insert(&jobWrapper{Job: job})
 }
 
 func (repo *transactionRepo) Update(job *communication.Job) error {
-	return repo.db.Update(job)
+	return repo.db.Update(&jobWrapper{Job: job})
 }

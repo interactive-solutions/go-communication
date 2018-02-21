@@ -1,8 +1,8 @@
 package communication
 
 type Template struct {
-	TemplateId string `json:"id"`
-	Locale     string `json:"locale"`
+	TemplateId string `pg:",pk" json:"id"`
+	Locale     string `pg:",pk" json:"locale"`
 
 	Enabled     bool
 	Description string `json:"description"`
