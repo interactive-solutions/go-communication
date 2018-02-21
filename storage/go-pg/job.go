@@ -12,7 +12,7 @@ func NewTransactionRepository(db *pg.DB) communication.TransactionRepository {
 }
 
 type jobWrapper struct {
-	TableName struct{} `sql:"communication_jobs, alias:jb" json:"-"`
+	TableName struct{} `sql:"communication_jobs, alias:cj" json:"-"`
 
 	*communication.Job
 }

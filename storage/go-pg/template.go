@@ -16,23 +16,26 @@ type templateRepository struct {
 }
 
 type templateWrapper struct {
-	*communication.Template
-
 	TableName struct{} `sql:"communication_templates,alias:ct" json:"-"`
+
+	*communication.Template
 }
 
 func (repo *templateRepository) Get(id, locale string) (communication.Template, error) {
-	template := communication.Template{}
 
-	if err := repo.db.Model(&template).Where("template_id = ? AND locale = ?", id, locale).Select(); err != nil {
-		if err == pg.ErrNoRows {
-			return template, communication.TemplateNotFoundErr
-		}
-
-		return template, err
+	wrapped := &templateWrapper{
+		Template: &communication.Template{},
 	}
 
-	return template, nil
+	if err := repo.db.Model(wrapped).Where("template_id = ? AND locale = ?", id, locale).Select(); err != nil {
+		if err == pg.ErrNoRows {
+			return *wrapped.Template, communication.TemplateNotFoundErr
+		}
+
+		return *wrapped.Template, err
+	}
+
+	return *wrapped.Template, nil
 }
 
 func (repo *templateRepository) Create(template *communication.Template) error {

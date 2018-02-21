@@ -1,18 +1,23 @@
 package communication
 
-type Template struct {
-	TemplateId string `pg:",pk" json:"id"`
-	Locale     string `pg:",pk" json:"locale"`
+import "time"
 
-	Enabled     bool
-	Description string `json:"description"`
+type Template struct {
+	TemplateId string `sql:",pk" json:"id"`
+	Locale     string `sql:",pk" json:"locale"`
+
+	Enabled     bool   `sql:",notnull"`
+	Description string `sql:",notnull" json:"description"`
 
 	Parameters       map[string]interface{} `json:"parameters"`
-	UpdateParameters bool                   `json:"updateParameters"`
+	UpdateParameters bool                   `sql:",notnull" json:"updateParameters"`
 
 	Subject  string `json:"subject"`
 	TextBody string `json:"textBody"`
 	HtmlBody string `json:"htmlBody"`
+
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type TemplateService interface {

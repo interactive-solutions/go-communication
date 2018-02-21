@@ -5,6 +5,7 @@ import (
 	"context"
 	"html/template"
 	"time"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -221,6 +222,13 @@ func (a *application) createMockTemplate(templateId, locale string) (Template, e
 		TemplateId:       templateId,
 		Locale:           locale,
 		UpdateParameters: true,
+
+		Subject:  "[InteractiveSolutions/Communications] template missing",
+		TextBody: fmt.Sprintf("A template is missing for template id: %s, locale: %s", templateId, locale),
+		HtmlBody: fmt.Sprintf("A template is missing for template id: %s, locale: %s", templateId, locale),
+
+		UpdatedAt: time.Now(),
+		CreatedAt: time.Now(),
 	}
 
 	if err := a.templateRepo.Create(&tpl); err != nil {
@@ -257,6 +265,8 @@ func (a *application) getTemplate(templateId, locale string) (Template, error) {
 	case TemplateNotFoundErr:
 		if _, err := a.createMockTemplate(templateId, locale); err != nil {
 			a.logger.
+				WithField("templateId", templateId).
+				WithField("locale", locale).
 				WithError(err).
 				Error("Failed to create mock template")
 		}
@@ -299,17 +309,17 @@ func (a *application) renderAndSendEmail(job *Job, tpl Template) error {
 
 	subject, err := a.render(tpl.Subject, job.Params)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to parse subject")
 	}
 
 	htmlBody, err := a.render(tpl.HtmlBody, job.Params)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to parse html body")
 	}
 
 	textBody, err := a.render(tpl.TextBody, job.Params)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to parse text body")
 	}
 
 	return a.defaultEmailTransport.Send(context.Background(), job.Target, subject, textBody, htmlBody)
@@ -318,7 +328,7 @@ func (a *application) renderAndSendEmail(job *Job, tpl Template) error {
 func (a *application) renderAndSendSms(job *Job, tpl Template) error {
 	message, err := a.render(tpl.TextBody, job.Params)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to parse text body")
 	}
 
 	return a.defaultSmsTransport.Send(context.Background(), job.Target, message)
