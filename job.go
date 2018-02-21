@@ -6,15 +6,15 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-type JobType uint
+type JobType string
 
 const (
-	JobSms JobType = iota
-	JobEmail
+	JobSms   JobType = "sms"
+	JobEmail JobType = "email"
 )
 
 type Job struct {
-	Uuid uuid.UUID `pg:",pk" json:"uuid"`
+	Uuid uuid.UUID `sql:",pk" json:"uuid"`
 	Type JobType   `json:"type"`
 
 	TemplateId string `json:"templateId"`
