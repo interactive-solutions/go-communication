@@ -3,18 +3,19 @@ package communication
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"html/template"
 	"time"
-	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/satori/go.uuid"
+	"github.com/sirupsen/logrus"
 )
 
 const UserAgent = "InteractiveSolutions/GoCommunication-1.0"
 
 type Application interface {
+	HttpHandler() *httpHandler
 	SendEmail(id, locale, email string, params map[string]interface{}) error
 	SendSms(id, locale, number string, params map[string]interface{}) error
 	Shutdown(ctx context.Context)
@@ -46,9 +47,9 @@ func SetTemplateRepo(repo TemplateRepository) AppOption {
 	}
 }
 
-func SetTransactionRepo(repo TransactionRepository) AppOption {
+func SetJobRepo(repo JobRepository) AppOption {
 	return func(a *application) {
-		a.transactionRepo = repo
+		a.jobRepo = repo
 	}
 }
 
@@ -67,8 +68,8 @@ type application struct {
 	workerQueue chan *Job
 	workerCount int
 
-	templateRepo    TemplateRepository
-	transactionRepo TransactionRepository
+	templateRepo TemplateRepository
+	jobRepo      JobRepository
 
 	fallbackLocale        string
 	defaultSmsTransport   SmsTransport
@@ -100,7 +101,7 @@ func NewApplication(options ...AppOption) (Application, error) {
 		go app.worker(ctx)
 	}
 
-	jobs, err := app.transactionRepo.GetPending()
+	jobs, err := app.jobRepo.GetPending()
 	if err != nil {
 		return app, err
 	}
@@ -112,16 +113,10 @@ func NewApplication(options ...AppOption) (Application, error) {
 	return app, nil
 }
 
-func (a *application) ensureUsableConfiguration() error {
-	if a.templateRepo == nil {
-		return errors.New("Missing template repository")
+func (a *application) HttpHandler() *httpHandler {
+	return &httpHandler{
+		app: a,
 	}
-
-	if a.transactionRepo == nil {
-		return errors.New("Missing transaction repository")
-	}
-
-	return nil
 }
 
 func (a *application) SendEmail(id, locale, email string, params map[string]interface{}) error {
@@ -139,7 +134,7 @@ func (a *application) SendEmail(id, locale, email string, params map[string]inte
 		CreatedAt:  time.Now(),
 	}
 
-	if err := a.transactionRepo.Create(job); err != nil {
+	if err := a.jobRepo.Create(job); err != nil {
 		return err
 	}
 
@@ -163,7 +158,7 @@ func (a *application) SendSms(id, locale, number string, params map[string]inter
 		CreatedAt:  time.Now(),
 	}
 
-	if err := a.transactionRepo.Create(job); err != nil {
+	if err := a.jobRepo.Create(job); err != nil {
 		return err
 	}
 
@@ -175,6 +170,18 @@ func (a *application) SendSms(id, locale, number string, params map[string]inter
 func (a *application) Shutdown(ctx context.Context) {
 	<-ctx.Done()
 	a.workerCancel()
+}
+
+func (a *application) ensureUsableConfiguration() error {
+	if a.templateRepo == nil {
+		return errors.New("Missing template repository")
+	}
+
+	if a.jobRepo == nil {
+		return errors.New("Missing transaction repository")
+	}
+
+	return nil
 }
 
 func (a *application) queue(job *Job) {
@@ -207,7 +214,7 @@ func (a *application) worker(ctx context.Context) {
 
 			job.SentAt = &now
 
-			if err := a.transactionRepo.Update(job); err != nil {
+			if err := a.jobRepo.Update(job); err != nil {
 				a.logger.
 					WithField("job", job).
 					WithError(err).

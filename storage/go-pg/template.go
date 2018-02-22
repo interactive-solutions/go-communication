@@ -1,6 +1,8 @@
 package gopg
 
 import (
+	"time"
+
 	"github.com/go-pg/pg"
 	"github.com/interactive-solutions/go-communication"
 )
@@ -43,9 +45,27 @@ func (repo *templateRepository) Create(template *communication.Template) error {
 }
 
 func (repo *templateRepository) Update(template *communication.Template) error {
+	template.UpdatedAt = time.Now()
+
 	return repo.db.Update(&templateWrapper{Template: template})
 }
 
 func (repo *templateRepository) Delete(template *communication.Template) error {
 	return repo.db.Delete(&templateWrapper{Template: template})
+}
+
+func (repo *templateRepository) GetAll() ([]communication.Template, error) {
+	var wrapped []templateWrapper
+	var templates []communication.Template
+
+	err := repo.db.Model(&wrapped).Order("template_id asc", "locale asc").Select()
+	if err != nil && err != pg.ErrNoRows {
+		return templates, err
+	}
+
+	for _, t := range wrapped {
+		templates = append(templates, *t.Template)
+	}
+
+	return templates, nil
 }
