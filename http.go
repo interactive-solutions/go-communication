@@ -9,11 +9,11 @@ import (
 	"github.com/interactive-solutions/go-communication/internal"
 )
 
-type httpHandler struct {
+type HttpHandler struct {
 	app *application
 }
 
-func (h *httpHandler) GetAllTemplates(w http.ResponseWriter, r *http.Request) {
+func (h *HttpHandler) GetAllTemplates(w http.ResponseWriter, r *http.Request) {
 
 	templates, err := h.app.templateRepo.GetAll()
 	if err != nil {
@@ -35,7 +35,7 @@ func (h *httpHandler) GetAllTemplates(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func (h *httpHandler) GetTemplate(w http.ResponseWriter, r *http.Request) {
+func (h *HttpHandler) GetTemplate(w http.ResponseWriter, r *http.Request) {
 	id, ok := mux.Vars(r)["id"]
 	if !ok {
 		http.Error(w, "Route id var", 400)
@@ -69,7 +69,7 @@ func (h *httpHandler) GetTemplate(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func (h *httpHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
+func (h *HttpHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 
 	id, ok := mux.Vars(r)["id"]
 	if !ok {
@@ -121,7 +121,7 @@ func (h *httpHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func (h *httpHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request) {
+func (h *HttpHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request) {
 	id, ok := mux.Vars(r)["id"]
 	if !ok {
 		http.Error(w, "Route id var", 400)

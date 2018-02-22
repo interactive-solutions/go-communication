@@ -15,7 +15,7 @@ import (
 const UserAgent = "InteractiveSolutions/GoCommunication-1.0"
 
 type Application interface {
-	HttpHandler() *httpHandler
+	HttpHandler() *HttpHandler
 	SendEmail(id, locale, email string, params map[string]interface{}) error
 	SendSms(id, locale, number string, params map[string]interface{}) error
 	Shutdown(ctx context.Context)
@@ -113,8 +113,8 @@ func NewApplication(options ...AppOption) (Application, error) {
 	return app, nil
 }
 
-func (a *application) HttpHandler() *httpHandler {
-	return &httpHandler{
+func (a *application) HttpHandler() *HttpHandler {
+	return &HttpHandler{
 		app: a,
 	}
 }
