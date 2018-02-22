@@ -11,15 +11,15 @@ type Application struct {
 }
 
 // HttpHandler provides a mock function with given fields:
-func (_m *Application) HttpHandler() *communication.httpHandler {
+func (_m *Application) HttpHandler() *communication.HttpHandler {
 	ret := _m.Called()
 
-	var r0 *communication.httpHandler
-	if rf, ok := ret.Get(0).(func() *communication.httpHandler); ok {
+	var r0 *communication.HttpHandler
+	if rf, ok := ret.Get(0).(func() *communication.HttpHandler); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*communication.httpHandler)
+			r0 = ret.Get(0).(*communication.HttpHandler)
 		}
 	}
 
