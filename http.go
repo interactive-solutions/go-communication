@@ -35,6 +35,40 @@ func (h *httpHandler) GetAllTemplates(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+func (h *httpHandler) GetTemplate(w http.ResponseWriter, r *http.Request) {
+	id, ok := mux.Vars(r)["id"]
+	if !ok {
+		http.Error(w, "Route id var", 400)
+		return
+	}
+
+	split := strings.SplitN(id, ":", 2)
+	if len(split) != 2 {
+		http.Error(w, "Invalid id provided, templateId:locale expected", 400)
+		return
+	}
+
+	template, err := h.app.templateRepo.Get(split[0], split[1])
+	if err != nil {
+		if err == TemplateNotFoundErr {
+			http.Error(w, "Template not found", 404)
+			return
+		}
+
+		http.Error(w, "Failed to retrieve template", 500)
+		return
+	}
+
+	data, err := json.Marshal(template)
+	if err != nil {
+		http.Error(w, "Failed to convert template to json", 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+}
+
 func (h *httpHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 
 	id, ok := mux.Vars(r)["id"]
