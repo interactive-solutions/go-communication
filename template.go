@@ -6,7 +6,7 @@ type Template struct {
 	TemplateId string `sql:",pk" json:"id"`
 	Locale     string `sql:",pk" json:"locale"`
 
-	Enabled     bool   `sql:",notnull"`
+	Enabled     bool   `sql:",notnull" json:"enabled"`
 	Description string `sql:",notnull" json:"description"`
 
 	Parameters       map[string]interface{} `json:"parameters"`
