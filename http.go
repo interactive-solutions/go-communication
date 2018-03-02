@@ -48,7 +48,7 @@ func (h *HttpHandler) GetTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	template, err := h.app.templateRepo.Get(split[0], split[1])
+	template, err := h.app.templateRepo.Get(split[1], split[0])
 	if err != nil {
 		if err == TemplateNotFoundErr {
 			http.Error(w, "Template not found", 404)
@@ -83,7 +83,7 @@ func (h *HttpHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	template, err := h.app.templateRepo.Get(split[0], split[1])
+	template, err := h.app.templateRepo.Get(split[1], split[0])
 	if err != nil {
 		if err == TemplateNotFoundErr {
 			http.Error(w, "Template not found", 404)
@@ -134,7 +134,7 @@ func (h *HttpHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	template, err := h.app.templateRepo.Get(split[0], split[1])
+	template, err := h.app.templateRepo.Get(split[1], split[0])
 	if err != nil {
 		if err == TemplateNotFoundErr {
 			http.Error(w, "Template not found", 404)
