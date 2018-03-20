@@ -7,10 +7,56 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/interactive-solutions/go-communication/internal"
+	"fmt"
 )
 
 type HttpHandler struct {
 	app *application
+}
+
+func (h *HttpHandler) TestTemplate(w http.ResponseWriter, r *http.Request) {
+	id, ok := mux.Vars(r)["id"]
+	if !ok {
+		http.Error(w, "Route id var", 400)
+		return
+	}
+
+	split := strings.SplitN(id, ":", 2)
+	if len(split) != 2 {
+		http.Error(w, "Invalid id provided, templateId:locale expected", 400)
+		return
+	}
+
+	template, err := h.app.templateRepo.Get(split[1], split[0])
+	if err != nil {
+		if err == TemplateNotFoundErr {
+			http.Error(w, "Template not found", 404)
+			return
+		}
+
+		http.Error(w, "Failed to retrieve template", 500)
+		return
+	}
+
+	body := &internal.TestTemplateRequest{}
+	if err := json.NewDecoder(r.Body).Decode(body); err != nil {
+		http.Error(w, "Failed to parse incoming json", 400)
+		return
+	}
+
+	switch body.Type {
+	case "sms":
+		h.app.SendSms(template.TemplateId, template.Locale, body.Target, template.Parameters)
+
+	case "email":
+		h.app.SendEmail(template.TemplateId, template.Locale, body.Target, template.Parameters)
+
+	default:
+		http.Error(w, fmt.Sprintf("Unsupported type %s", body.Type), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *HttpHandler) GetAllTemplates(w http.ResponseWriter, r *http.Request) {

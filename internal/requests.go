@@ -1,5 +1,10 @@
 package internal
 
+type TestTemplateRequest struct {
+	Type   string `json:"type"`
+	Target string `json:"target"`
+}
+
 type UpdateTemplateRequest struct {
 	UpdateParameters bool   `json:"updateParameters"`
 	Enabled          bool   `json:"enabled"`
