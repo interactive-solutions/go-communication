@@ -107,7 +107,10 @@ func NewApplication(options ...AppOption) (Application, error) {
 	}
 
 	for _, job := range jobs {
-		app.queue(&job)
+		cpy := job
+
+		// Queue the copy of the join
+		app.queue(&cpy)
 	}
 
 	return app, nil
