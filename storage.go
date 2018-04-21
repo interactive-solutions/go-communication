@@ -100,6 +100,7 @@ type JobCriteria struct {
 	Limit  int
 	Offset int
 
+	Type       string
 	TemplateId string
 	Locale     string
 	Target     string
@@ -118,6 +119,7 @@ func PopulateJobCriteria(r *http.Request) JobCriteria {
 		Sorting: map[string]string{},
 	}
 
+	criteria.Type = r.FormValue("type")
 	criteria.Locale = r.FormValue("locale")
 	criteria.TemplateId = r.FormValue("templateId")
 

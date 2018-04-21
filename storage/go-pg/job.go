@@ -56,6 +56,10 @@ func (repo *jobRepository) Matching(criteria communication.JobCriteria) ([]commu
 		Offset(criteria.Offset).
 		Limit(criteria.Limit)
 
+	if criteria.Type != "" {
+		builder.Where("type = ?", criteria.Type)
+	}
+
 	if criteria.TemplateId != "" {
 		builder.Where("template_id like ?", criteria.TemplateId+"%")
 	}
