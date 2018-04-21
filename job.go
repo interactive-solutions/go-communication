@@ -14,8 +14,9 @@ const (
 )
 
 type Job struct {
-	Uuid uuid.UUID `sql:",pk" json:"uuid"`
-	Type JobType   `json:"type"`
+	Uuid       uuid.UUID `sql:",pk" json:"uuid"`
+	ExternalId string    `json:"externalId"`
+	Type       JobType   `json:"type"`
 
 	TemplateId string `json:"templateId"`
 	Locale     string `json:"locale"`

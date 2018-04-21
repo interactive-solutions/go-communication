@@ -2,16 +2,22 @@ package communication
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/interactive-solutions/go-communication/internal"
-	"fmt"
 )
 
 type HttpHandler struct {
 	app *application
+}
+
+type collectionMeta struct {
+	Total  int `json:"total"`
+	Limit  int `json:"limit"`
+	Offset int `json:"offset"`
 }
 
 func (h *HttpHandler) TestTemplate(w http.ResponseWriter, r *http.Request) {
@@ -46,10 +52,10 @@ func (h *HttpHandler) TestTemplate(w http.ResponseWriter, r *http.Request) {
 
 	switch body.Type {
 	case "sms":
-		h.app.SendSms(template.TemplateId, template.Locale, body.Target, template.Parameters)
+		h.app.SendSms(template.TemplateId, template.Locale, body.Target, "", template.Parameters)
 
 	case "email":
-		h.app.SendEmail(template.TemplateId, template.Locale, body.Target, template.Parameters)
+		h.app.SendEmail(template.TemplateId, template.Locale, body.Target, "", template.Parameters)
 
 	default:
 		http.Error(w, fmt.Sprintf("Unsupported type %s", body.Type), http.StatusBadRequest)
@@ -61,15 +67,25 @@ func (h *HttpHandler) TestTemplate(w http.ResponseWriter, r *http.Request) {
 
 func (h *HttpHandler) GetAllTemplates(w http.ResponseWriter, r *http.Request) {
 
-	templates, err := h.app.templateRepo.GetAll()
+	criteria := PopulateTemplateCriteria(r)
+
+	templates, count, err := h.app.templateRepo.Matching(criteria)
 	if err != nil {
 		http.Error(w, "Failed to retrieve templates", 500)
 		return
 	}
 
 	payload := struct {
-		Data []Template `json:"data"`
-	}{templates}
+		Data []Template     `json:"data"`
+		Meta collectionMeta `json:"meta"`
+	}{
+		Data: templates,
+		Meta: collectionMeta{
+			Total:  count,
+			Limit:  criteria.Limit,
+			Offset: criteria.Offset,
+		},
+	}
 
 	data, err := json.Marshal(payload)
 	if err != nil {

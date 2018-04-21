@@ -54,18 +54,46 @@ func (repo *templateRepository) Delete(template *communication.Template) error {
 	return repo.db.Delete(&templateWrapper{Template: template})
 }
 
-func (repo *templateRepository) GetAll() ([]communication.Template, error) {
+func (repo *templateRepository) Matching(criteria communication.TemplateCriteria) ([]communication.Template, int, error) {
 	var wrapped []templateWrapper
 	var templates []communication.Template
 
-	err := repo.db.Model(&wrapped).Order("template_id asc", "locale asc").Select()
+	builder := repo.db.Model(&wrapped).
+		Offset(criteria.Offset).
+		Limit(criteria.Limit)
+
+	if criteria.TemplateId != "" {
+		builder.Where("template_id like ?", criteria.TemplateId+"%")
+	}
+
+	if criteria.Locale != "" {
+		builder.Where("LOWER(locale) = LOWER(?)", criteria.Locale)
+	}
+
+	if criteria.Subject != "" {
+		builder.Where("LOWER(subject) = LOWER(?)", criteria.Subject+"%")
+	}
+
+	if !criteria.UpdatedAfter.IsZero() {
+		builder.Where("updated_at >= ?", criteria.UpdatedAfter)
+	}
+
+	if !criteria.UpdatedBefore.IsZero() {
+		builder.Where("updated_at <= ?", criteria.UpdatedBefore)
+	}
+
+	for col, dir := range criteria.Sorting {
+		builder.Order("%s %s", col, dir)
+	}
+
+	count, err := builder.SelectAndCount()
 	if err != nil && err != pg.ErrNoRows {
-		return templates, err
+		return templates, 0, err
 	}
 
 	for _, t := range wrapped {
 		templates = append(templates, *t.Template)
 	}
 
-	return templates, nil
+	return templates, count, nil
 }

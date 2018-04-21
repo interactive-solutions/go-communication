@@ -6,7 +6,7 @@ import (
 )
 
 func NewTransactionRepository(db *pg.DB) communication.JobRepository {
-	return &transactionRepo{
+	return &jobRepository{
 		db: db,
 	}
 }
@@ -17,11 +17,19 @@ type jobWrapper struct {
 	*communication.Job
 }
 
-type transactionRepo struct {
+type jobRepository struct {
 	db *pg.DB
 }
 
-func (repo *transactionRepo) GetPending() ([]communication.Job, error) {
+func (repo *jobRepository) Create(job *communication.Job) error {
+	return repo.db.Insert(&jobWrapper{Job: job})
+}
+
+func (repo *jobRepository) Update(job *communication.Job) error {
+	return repo.db.Update(&jobWrapper{Job: job})
+}
+
+func (repo *jobRepository) GetPending() ([]communication.Job, error) {
 	var jobs []communication.Job
 	var wrappedJobs []jobWrapper
 
@@ -40,10 +48,50 @@ func (repo *transactionRepo) GetPending() ([]communication.Job, error) {
 	return jobs, nil
 }
 
-func (repo *transactionRepo) Create(job *communication.Job) error {
-	return repo.db.Insert(&jobWrapper{Job: job})
-}
+func (repo *jobRepository) Matching(criteria communication.JobCriteria) ([]communication.Job, int, error) {
+	var jobs []communication.Job
+	var wrappedJobs []jobWrapper
 
-func (repo *transactionRepo) Update(job *communication.Job) error {
-	return repo.db.Update(&jobWrapper{Job: job})
+	builder := repo.db.Model(&wrappedJobs).
+		Offset(criteria.Offset).
+		Limit(criteria.Limit)
+
+	if criteria.TemplateId != "" {
+		builder.Where("template_id like ?", criteria.TemplateId+"%")
+	}
+
+	if criteria.Locale != "" {
+		builder.Where("LOWER(locale) = LOWER(?)", criteria.Locale)
+	}
+
+	if criteria.Target != "" {
+		builder.Where("LOWER(target) = LOWER(?)", criteria.Target+"%")
+	}
+
+	if criteria.ExternalId != "" {
+		builder.Where("external_id = ?", criteria.ExternalId)
+	}
+
+	if !criteria.SentAfter.IsZero() {
+		builder.Where("sent_at >= ?", criteria.SentAfter)
+	}
+
+	if !criteria.SentBefore.IsZero() {
+		builder.Where("sent_at <= ?", criteria.SentBefore)
+	}
+
+	for col, dir := range criteria.Sorting {
+		builder.Order("%s %s", col, dir)
+	}
+
+	count, err := builder.SelectAndCount()
+	if err != nil && err != pg.ErrNoRows {
+		return jobs, 0, err
+	}
+
+	for _, job := range wrappedJobs {
+		jobs = append(jobs, *job.Job)
+	}
+
+	return jobs, count, nil
 }

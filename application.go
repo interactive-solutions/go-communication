@@ -16,8 +16,8 @@ const UserAgent = "InteractiveSolutions/GoCommunication-1.0"
 
 type Application interface {
 	HttpHandler() *HttpHandler
-	SendEmail(id, locale, email string, params map[string]interface{}) error
-	SendSms(id, locale, number string, params map[string]interface{}) error
+	SendEmail(id, locale, email, externalId string, params map[string]interface{}) error
+	SendSms(id, locale, number, externalId string, params map[string]interface{}) error
 	Shutdown(ctx context.Context)
 }
 
@@ -122,13 +122,14 @@ func (a *application) HttpHandler() *HttpHandler {
 	}
 }
 
-func (a *application) SendEmail(id, locale, email string, params map[string]interface{}) error {
+func (a *application) SendEmail(id, locale, email, externalId string, params map[string]interface{}) error {
 	if a.defaultEmailTransport == nil {
 		return errors.New("No email transport configured")
 	}
 
 	job := &Job{
 		Uuid:       uuid.NewV4(),
+		ExternalId: externalId,
 		Type:       JobEmail,
 		TemplateId: id,
 		Locale:     locale,
@@ -146,13 +147,14 @@ func (a *application) SendEmail(id, locale, email string, params map[string]inte
 	return nil
 }
 
-func (a *application) SendSms(id, locale, number string, params map[string]interface{}) error {
+func (a *application) SendSms(id, locale, number, externalId string, params map[string]interface{}) error {
 	if a.defaultSmsTransport == nil {
 		return errors.New("No sms transport configured")
 	}
 
 	job := &Job{
 		Uuid:       uuid.NewV4(),
+		ExternalId: externalId,
 		Type:       JobSms,
 		TemplateId: id,
 		Locale:     locale,
