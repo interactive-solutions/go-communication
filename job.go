@@ -15,7 +15,7 @@ const (
 
 type Job struct {
 	Uuid       uuid.UUID `sql:",pk" json:"uuid"`
-	ExternalId string    `json:"externalId"`
+	ExternalId string    `sql:",notnull" json:"externalId"`
 	Type       JobType   `json:"type"`
 
 	TemplateId string `json:"templateId"`
