@@ -5,7 +5,7 @@ import (
 	"github.com/interactive-solutions/go-communication"
 )
 
-func NewTransactionRepository(db *pg.DB) communication.JobRepository {
+func NewJobRepository(db *pg.DB) communication.JobRepository {
 	return &jobRepository{
 		db: db,
 	}
