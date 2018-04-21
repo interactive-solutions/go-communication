@@ -26,13 +26,13 @@ func (_m *Application) HttpHandler() *communication.HttpHandler {
 	return r0
 }
 
-// SendEmail provides a mock function with given fields: id, locale, email, params
-func (_m *Application) SendEmail(id string, locale string, email string, params map[string]interface{}) error {
-	ret := _m.Called(id, locale, email, params)
+// SendEmail provides a mock function with given fields: id, locale, email, externalId, params
+func (_m *Application) SendEmail(id string, locale string, email string, externalId string, params map[string]interface{}) error {
+	ret := _m.Called(id, locale, email, externalId, params)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, string, map[string]interface{}) error); ok {
-		r0 = rf(id, locale, email, params)
+	if rf, ok := ret.Get(0).(func(string, string, string, string, map[string]interface{}) error); ok {
+		r0 = rf(id, locale, email, externalId, params)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -40,13 +40,13 @@ func (_m *Application) SendEmail(id string, locale string, email string, params 
 	return r0
 }
 
-// SendSms provides a mock function with given fields: id, locale, number, params
-func (_m *Application) SendSms(id string, locale string, number string, params map[string]interface{}) error {
-	ret := _m.Called(id, locale, number, params)
+// SendSms provides a mock function with given fields: id, locale, number, externalId, params
+func (_m *Application) SendSms(id string, locale string, number string, externalId string, params map[string]interface{}) error {
+	ret := _m.Called(id, locale, number, externalId, params)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, string, map[string]interface{}) error); ok {
-		r0 = rf(id, locale, number, params)
+	if rf, ok := ret.Get(0).(func(string, string, string, string, map[string]interface{}) error); ok {
+		r0 = rf(id, locale, number, externalId, params)
 	} else {
 		r0 = ret.Error(0)
 	}
