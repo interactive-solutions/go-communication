@@ -1,6 +1,7 @@
 package internal
 
 type TestTemplateRequest struct {
+	Id     string `json:"id"`
 	Type   string `json:"type"`
 	Target string `json:"target"`
 }

@@ -23,13 +23,14 @@ type collectionMeta struct {
 }
 
 func (h *HttpHandler) TestTemplate(w http.ResponseWriter, r *http.Request) {
-	id, ok := mux.Vars(r)["id"]
-	if !ok {
-		http.Error(w, "Route id var", 400)
+
+	body := &internal.TestTemplateRequest{}
+	if err := json.NewDecoder(r.Body).Decode(body); err != nil {
+		http.Error(w, "Failed to parse incoming json", 400)
 		return
 	}
 
-	split := strings.SplitN(id, ":", 2)
+	split := strings.SplitN(body.Id, ":", 2)
 	if len(split) != 2 {
 		http.Error(w, "Invalid id provided, templateId:locale expected", 400)
 		return
@@ -43,12 +44,6 @@ func (h *HttpHandler) TestTemplate(w http.ResponseWriter, r *http.Request) {
 		}
 
 		http.Error(w, "Failed to retrieve template", 500)
-		return
-	}
-
-	body := &internal.TestTemplateRequest{}
-	if err := json.NewDecoder(r.Body).Decode(body); err != nil {
-		http.Error(w, "Failed to parse incoming json", 400)
 		return
 	}
 
