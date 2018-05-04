@@ -1,10 +1,8 @@
 package communication
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strings"
 
@@ -159,26 +157,16 @@ func (h *HttpHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if testRender(body.Subject, template.Parameters) != nil {
-		http.Error(w, "Subject cannot be rendered", 422)
-		return
-	}
-
-	if testRender(body.TextBody, template.Parameters) != nil {
-		http.Error(w, "Text body cannot be rendered", 422)
-		return
-	}
-
-	if testRender(body.HtmlBody, template.Parameters) != nil {
-		http.Error(w, "Html body cannot be rendered", 422)
-		return
-	}
-
-	template.UpdateParameters = body.UpdateParameters
-	template.Enabled = body.Enabled
 	template.Subject = body.Subject
 	template.TextBody = body.TextBody
 	template.HtmlBody = body.HtmlBody
+	template.UpdateParameters = body.UpdateParameters
+	template.Enabled = body.Enabled
+
+	if _, _, _, err := h.app.Render(template); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to render template with error: %s", err.Error()), 422)
+		return
+	}
 
 	if err := h.app.templateRepo.Update(&template); err != nil {
 		http.Error(w, "Failed to update template", 500)
@@ -225,19 +213,4 @@ func (h *HttpHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func testRender(body string, params map[string]interface{}) error {
-	tpl, err := template.New("").Parse(body)
-	if err != nil {
-		return err
-	}
-
-	out := &bytes.Buffer{}
-
-	if err := tpl.Execute(out, params); err != nil {
-		return err
-	}
-
-	return nil
 }
