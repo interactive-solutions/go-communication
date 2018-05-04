@@ -326,7 +326,7 @@ func (a *application) process(job *Job) error {
 }
 
 func (a *application) renderAndSendEmail(job *Job, tpl Template) error {
-	subject, textBody, htmlBody, err := a.Render(tpl)
+	subject, textBody, htmlBody, err := a.Render(tpl, job)
 	if err != nil {
 		return err
 	}
@@ -335,7 +335,7 @@ func (a *application) renderAndSendEmail(job *Job, tpl Template) error {
 }
 
 func (a *application) renderAndSendSms(job *Job, tpl Template) error {
-	_, textBody, _, err := a.Render(tpl)
+	_, textBody, _, err := a.Render(tpl, job)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse text body")
 	}
@@ -343,18 +343,18 @@ func (a *application) renderAndSendSms(job *Job, tpl Template) error {
 	return a.defaultSmsTransport.Send(context.Background(), job.Target, textBody)
 }
 
-func (a *application) Render(template Template) (subject, text, html string, err error) {
-	subject, err = a.render(template.Subject, template.Parameters)
+func (a *application) Render(template Template, job *Job) (subject, text, html string, err error) {
+	subject, err = a.render(template.Subject, job.Params)
 	if err != nil {
 		return
 	}
 
-	text, err = a.render(template.TextBody, template.Parameters)
+	text, err = a.render(template.TextBody, job.Params)
 	if err != nil {
 		return
 	}
 
-	html, err = a.render(template.HtmlBody, template.Parameters)
+	html, err = a.render(template.HtmlBody, job.Params)
 	return
 }
 

@@ -56,7 +56,11 @@ func (suite *applicationTestSuite) TestRenderWithCustomFunc() {
 		},
 	}
 
-	subject, text, html, err := app.(*application).Render(tpl)
+	job := &Job{
+		Params: tpl.Parameters,
+	}
+
+	subject, text, html, err := app.(*application).Render(tpl, job)
 	if !assert.NoError(suite.T(), err, "Failed to render the template") {
 		return
 	}

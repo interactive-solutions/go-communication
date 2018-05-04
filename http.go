@@ -163,7 +163,7 @@ func (h *HttpHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 	template.UpdateParameters = body.UpdateParameters
 	template.Enabled = body.Enabled
 
-	if _, _, _, err := h.app.Render(template); err != nil {
+	if _, _, _, err := h.app.Render(template, &Job{Params: template.Parameters}); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to render template with error: %s", err.Error()), 422)
 		return
 	}
