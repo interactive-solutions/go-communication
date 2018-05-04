@@ -59,6 +59,12 @@ func SetWorkerCount(count int) AppOption {
 	}
 }
 
+func SetTemplateFuncMap(funcMap template.FuncMap) AppOption {
+	return func(a *application) {
+		a.templateFuncMap = funcMap
+	}
+}
+
 type application struct {
 	logger logrus.FieldLogger
 
@@ -74,6 +80,8 @@ type application struct {
 	fallbackLocale        string
 	defaultSmsTransport   SmsTransport
 	defaultEmailTransport EmailTransport
+
+	templateFuncMap template.FuncMap
 }
 
 func NewApplication(options ...AppOption) (Application, error) {
@@ -318,36 +326,40 @@ func (a *application) process(job *Job) error {
 }
 
 func (a *application) renderAndSendEmail(job *Job, tpl Template) error {
-
-	subject, err := a.render(tpl.Subject, job.Params)
+	subject, textBody, htmlBody, err := a.Render(tpl)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse subject")
-	}
-
-	htmlBody, err := a.render(tpl.HtmlBody, job.Params)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse html body")
-	}
-
-	textBody, err := a.render(tpl.TextBody, job.Params)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse text body")
+		return err
 	}
 
 	return a.defaultEmailTransport.Send(context.Background(), job.Target, subject, textBody, htmlBody)
 }
 
 func (a *application) renderAndSendSms(job *Job, tpl Template) error {
-	message, err := a.render(tpl.TextBody, job.Params)
+	_, textBody, _, err := a.Render(tpl)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse text body")
 	}
 
-	return a.defaultSmsTransport.Send(context.Background(), job.Target, message)
+	return a.defaultSmsTransport.Send(context.Background(), job.Target, textBody)
+}
+
+func (a *application) Render(template Template) (subject, text, html string, err error) {
+	subject, err = a.render(template.Subject, template.Parameters)
+	if err != nil {
+		return
+	}
+
+	text, err = a.render(template.TextBody, template.Parameters)
+	if err != nil {
+		return
+	}
+
+	html, err = a.render(template.HtmlBody, template.Parameters)
+	return
 }
 
 func (a *application) render(body string, params map[string]interface{}) (string, error) {
-	tpl, err := template.New("").Parse(body)
+	tpl, err := template.New("").Funcs(a.templateFuncMap).Parse(body)
 	if err != nil {
 		return "", err
 	}
