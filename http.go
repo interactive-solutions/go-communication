@@ -163,6 +163,11 @@ func (h *HttpHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 	template.UpdateParameters = body.UpdateParameters
 	template.Enabled = body.Enabled
 
+	// Check if we have a html to text converter if the text body was not provided
+	if template.TextBody == "" && h.app.htmlToTextConverter != nil {
+		template.TextBody = h.app.htmlToTextConverter(template.TextBody)
+	}
+
 	if _, _, _, err := h.app.Render(template, &Job{Params: template.Parameters}); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to render template with error: %s", err.Error()), 422)
 		return

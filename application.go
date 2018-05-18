@@ -65,6 +65,12 @@ func SetTemplateFuncMap(funcMap template.FuncMap) AppOption {
 	}
 }
 
+func SetHtmlToTextConverter(f func (string) string) AppOption {
+	return func (a *application) {
+		a.htmlToTextConverter = f
+	}
+}
+
 type application struct {
 	logger logrus.FieldLogger
 
@@ -82,6 +88,8 @@ type application struct {
 	defaultEmailTransport EmailTransport
 
 	templateFuncMap template.FuncMap
+
+	htmlToTextConverter func (string) string
 }
 
 func NewApplication(options ...AppOption) (Application, error) {
