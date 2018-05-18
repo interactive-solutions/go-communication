@@ -165,7 +165,7 @@ func (h *HttpHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 
 	// Check if we have a html to text converter if the text body was not provided
 	if template.TextBody == "" && h.app.htmlToTextConverter != nil {
-		template.TextBody = h.app.htmlToTextConverter(template.TextBody)
+		template.TextBody = h.app.htmlToTextConverter(template.HtmlBody)
 	}
 
 	if _, _, _, err := h.app.Render(template, &Job{Params: template.Parameters}); err != nil {
