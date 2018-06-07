@@ -30,7 +30,7 @@ func (h *HttpHandler) TestTemplate(w http.ResponseWriter, r *http.Request) {
 
 	split := strings.SplitN(body.Id, ":", 2)
 	if len(split) != 2 {
-		http.Error(w, "Invalid id provided, templateId:locale expected", 400)
+		http.Error(w, "Invalid id provided, locale:templateId expected", 400)
 		return
 	}
 
