@@ -71,6 +71,12 @@ func SetHtmlToTextConverter(f func (string) string) AppOption {
 	}
 }
 
+func SetLogger(logger logrus.FieldLogger) AppOption {
+	return func (a *application) {
+		a.logger = logger
+	}
+}
+
 type application struct {
 	logger logrus.FieldLogger
 
