@@ -77,6 +77,12 @@ func SetLogger(logger logrus.FieldLogger) AppOption {
 	}
 }
 
+func SetStaticParams(params map[string]interface{}) AppOption {
+	return func (a *application) {
+		a.staticParams = params
+	}
+}
+
 type application struct {
 	logger logrus.FieldLogger
 
@@ -96,6 +102,8 @@ type application struct {
 	templateFuncMap template.FuncMap
 
 	htmlToTextConverter func (string) string
+
+	staticParams map[string]interface{}
 }
 
 func NewApplication(options ...AppOption) (Application, error) {
@@ -373,6 +381,15 @@ func (a *application) Render(template Template, job *Job) (subject, text, html s
 }
 
 func (a *application) render(body string, params map[string]interface{}) (string, error) {
+	for key, value := range a.staticParams {
+		if _, ok := params[key]; ok {
+			// Allow dynamic parameters to overwrite static parameters
+			continue
+		}
+
+		params[key] = value
+	}
+
 	tpl, err := template.New("").Funcs(a.templateFuncMap).Parse(body)
 	if err != nil {
 		return "", err
