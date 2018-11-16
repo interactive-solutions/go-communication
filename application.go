@@ -381,6 +381,10 @@ func (a *application) Render(template Template, job *Job) (subject, text, html s
 }
 
 func (a *application) render(body string, params map[string]interface{}) (string, error) {
+	if params == nil {
+		params = map[string]interface{}{}
+	}
+
 	for key, value := range a.staticParams {
 		if _, ok := params[key]; ok {
 			// Allow dynamic parameters to overwrite static parameters
