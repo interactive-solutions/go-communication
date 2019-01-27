@@ -2,7 +2,6 @@ package mailgun
 
 import (
 	"context"
-	"github.com/mailgun/mailgun-go"
 	"github.com/mailgun/mailgun-go/v3"
 	"github.com/pkg/errors"
 
