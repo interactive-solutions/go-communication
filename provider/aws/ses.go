@@ -53,7 +53,7 @@ func (transport *sesTransport) Send(ctx context.Context, job *communication.Job,
 			{
 				Name:  aws.String("template"),
 				Value: aws.String(template.TemplateId),
-			}
+			},
 		},
 		Message: &ses.Message{
 			Body: &ses.Body{
