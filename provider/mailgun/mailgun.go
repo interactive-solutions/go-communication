@@ -2,6 +2,7 @@ package mailgun
 
 import (
 	"context"
+	"github.com/mailgun/mailgun-go"
 	"github.com/mailgun/mailgun-go/v3"
 	"github.com/pkg/errors"
 
@@ -63,7 +64,7 @@ func (t *mailgunTransport) Send(ctx context.Context, job *communication.Job, tem
 	msg := t.mg.NewMessage(t.from, subject, textBody, job.Target)
 	msg.SetHtml(htmlBody)
 
-	if err := msg.AddTag(template.TemplateId, template.Locale); err != nil {
+	if err := msg.AddTag(template.TemplateId); err != nil {
 		return errors.Wrap(err, "Failed to add tags")
 	}
 
