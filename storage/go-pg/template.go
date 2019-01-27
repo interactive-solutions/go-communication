@@ -56,7 +56,7 @@ func (repo *templateRepository) Delete(template *communication.Template) error {
 
 func (repo *templateRepository) Matching(criteria communication.TemplateCriteria) ([]communication.Template, int, error) {
 	var wrapped []templateWrapper
-	var templates []communication.Template
+	templates := make([]communication.Template, 0)
 
 	builder := repo.db.Model(&wrapped).
 		Offset(criteria.Offset).
