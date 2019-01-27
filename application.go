@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -22,6 +22,7 @@ type Application interface {
 }
 
 type AppOption func(a *application)
+type RenderFunc func(body string, params map[string]interface{}) (string, error)
 
 func SetFallbackLocale(locale string) AppOption {
 	return func(a *application) {
@@ -29,13 +30,13 @@ func SetFallbackLocale(locale string) AppOption {
 	}
 }
 
-func SetDefaultSmsTransport(transport SmsTransport) AppOption {
+func SetDefaultSmsTransport(transport Transport) AppOption {
 	return func(a *application) {
 		a.defaultSmsTransport = transport
 	}
 }
 
-func SetDefaultEmailTransport(transport EmailTransport) AppOption {
+func SetDefaultEmailTransport(transport Transport) AppOption {
 	return func(a *application) {
 		a.defaultEmailTransport = transport
 	}
@@ -96,8 +97,8 @@ type application struct {
 	jobRepo      JobRepository
 
 	fallbackLocale        string
-	defaultSmsTransport   SmsTransport
-	defaultEmailTransport EmailTransport
+	defaultSmsTransport   Transport
+	defaultEmailTransport Transport
 
 	templateFuncMap template.FuncMap
 
@@ -158,7 +159,7 @@ func (a *application) SendEmail(id, locale, email, externalId string, params map
 	}
 
 	job := &Job{
-		Uuid:       uuid.NewV4(),
+		Uuid:       uuid.New(),
 		ExternalId: externalId,
 		Type:       JobEmail,
 		TemplateId: id,
@@ -183,7 +184,7 @@ func (a *application) SendSms(id, locale, number, externalId string, params map[
 	}
 
 	job := &Job{
-		Uuid:       uuid.NewV4(),
+		Uuid:       uuid.New(),
 		ExternalId: externalId,
 		Type:       JobSms,
 		TemplateId: id,
@@ -337,32 +338,14 @@ func (a *application) process(job *Job) error {
 
 	switch job.Type {
 	case JobSms:
-		return a.renderAndSendSms(job, tpl)
+		return a.defaultSmsTransport.Send(context.Background(), job, tpl, a.render)
 
 	case JobEmail:
-		return a.renderAndSendEmail(job, tpl)
+		return a.defaultEmailTransport.Send(context.Background(), job, tpl, a.render)
 
 	default:
-		return errors.Errorf("Unknown job type %d", job.Type)
+		return errors.Errorf("Unknown job type %s", job.Type)
 	}
-}
-
-func (a *application) renderAndSendEmail(job *Job, tpl Template) error {
-	subject, textBody, htmlBody, err := a.Render(tpl, job)
-	if err != nil {
-		return err
-	}
-
-	return a.defaultEmailTransport.Send(context.Background(), job.Target, subject, textBody, htmlBody)
-}
-
-func (a *application) renderAndSendSms(job *Job, tpl Template) error {
-	_, textBody, _, err := a.Render(tpl, job)
-	if err != nil {
-		return errors.Wrap(err, "failed to parse text body")
-	}
-
-	return a.defaultSmsTransport.Send(context.Background(), job.Target, textBody)
 }
 
 func (a *application) Render(template Template, job *Job) (subject, text, html string, err error) {

@@ -2,9 +2,10 @@ package mailgun
 
 import (
 	"context"
+	"github.com/mailgun/mailgun-go"
+	"github.com/pkg/errors"
 
 	"github.com/interactive-solutions/go-communication"
-	"gopkg.in/mailgun/mailgun-go.v1"
 )
 
 type MailgunOption func(t *mailgunTransport) error
@@ -30,7 +31,7 @@ type mailgunTransport struct {
 	replyTo string
 }
 
-func NewMailgunTransport(mailgunClient mailgun.Mailgun, options ...MailgunOption) communication.EmailTransport {
+func NewMailgunTransport(mailgunClient mailgun.Mailgun, options ...MailgunOption) communication.Transport {
 	t := &mailgunTransport{
 		mg: mailgunClient,
 	}
@@ -42,15 +43,34 @@ func NewMailgunTransport(mailgunClient mailgun.Mailgun, options ...MailgunOption
 	return t
 }
 
-func (t *mailgunTransport) Send(ctx context.Context, email, subject, textBody, htmlBody string) error {
+func (t *mailgunTransport) Send(ctx context.Context, job *communication.Job, template communication.Template, render communication.RenderFunc) error {
 
-	msg := t.mg.NewMessage(t.from, subject, textBody, email)
+	subject, err := render(template.Subject, job.Params)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to render subject for job %s template %s", job.Uuid, template.TemplateId)
+	}
+
+	textBody, err := render(template.TextBody, job.Params)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to render text body for job %s template %s", job.Uuid, template.TemplateId)
+	}
+
+	htmlBody, err := render(template.HtmlBody, job.Params)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to render html body for job %s template %s", job.Uuid, template.TemplateId)
+	}
+
+	msg := t.mg.NewMessage(t.from, subject, textBody, job.Target)
 	msg.SetHtml(htmlBody)
+
+	if err := msg.AddTag(template.TemplateId, template.Locale); err != nil {
+		return errors.Wrap(err, "Failed to add tags")
+	}
 
 	if t.replyTo != "" {
 		msg.SetReplyTo(t.replyTo)
 	}
 
-	_, _, err := t.mg.Send(msg)
-	return err
+	_, _, err = t.mg.Send(ctx, msg)
+	return errors.Wrap(err, "Failed to send message")
 }

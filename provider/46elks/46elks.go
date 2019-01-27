@@ -24,7 +24,7 @@ type elks struct {
 	password string
 }
 
-func New46ElksClient(from, username, password string) *elks {
+func New46ElksClient(from, username, password string) communication.Transport {
 	return &elks{
 		client: retryablehttp.NewClient(),
 
@@ -34,11 +34,15 @@ func New46ElksClient(from, username, password string) *elks {
 	}
 }
 
-func (e *elks) Send(ctx context.Context, number string, message string) error {
+func (e *elks) Send(ctx context.Context, job *communication.Job, template communication.Template, render communication.RenderFunc) error {
+	message, err := render(template.TextBody, job.Params)
+	if err != nil {
+		return errors.Wrap(err, "Failed to generate sms message from template")
+	}
 
 	body := url.Values{
 		"from":    {e.from},
-		"to":      {number},
+		"to":      {job.Target},
 		"message": {message},
 	}.Encode()
 
@@ -47,18 +51,15 @@ func (e *elks) Send(ctx context.Context, number string, message string) error {
 		return err
 	}
 
-	req.Request = req.WithContext(ctx)
+	req = req.WithContext(ctx)
 	req.SetBasicAuth(e.username, e.password)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Content-Length", strconv.Itoa(len(body)))
 	req.Header.Set("User-Agent", communication.UserAgent)
 
-	resp, err := e.client.Do(req)
-	if err != nil {
+	if resp, err := e.client.Do(req); err != nil {
 		return err
-	}
-
-	if resp.StatusCode >= 300 || resp.StatusCode <= 199 {
+	} else if resp.StatusCode >= 300 || resp.StatusCode <= 199 {
 		return errors.Errorf("Unexpected response code %d received from 46elks", resp.StatusCode)
 	}
 
