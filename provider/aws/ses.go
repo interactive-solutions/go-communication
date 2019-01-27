@@ -2,6 +2,8 @@ package provider
 
 import (
 	"context"
+	"github.com/interactive-solutions/go-communication"
+	"github.com/pkg/errors"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -15,7 +17,7 @@ type sesTransport struct {
 	charset string
 }
 
-func NewSesTransport(sess *session.Session, from string) *sesTransport {
+func NewSesTransport(sess *session.Session, from string) communication.Transport {
 	return &sesTransport{
 		ses:     ses.New(sess),
 		from:    from,
@@ -23,13 +25,38 @@ func NewSesTransport(sess *session.Session, from string) *sesTransport {
 	}
 }
 
-func (transport *sesTransport) Send(ctx context.Context, email, subject, textBody, htmlBody string) error {
+func (transport *sesTransport) Send(ctx context.Context, job *communication.Job, template communication.Template, render communication.RenderFunc) error {
+	subject, err := render(template.Subject, job.Params)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to render subject for job %s template %s", job.Uuid, template.TemplateId)
+	}
+
+	textBody, err := render(template.TextBody, job.Params)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to render text body for job %s template %s", job.Uuid, template.TemplateId)
+	}
+
+	htmlBody, err := render(template.HtmlBody, job.Params)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to render html body for job %s template %s", job.Uuid, template.TemplateId)
+	}
+
 	// Assemble the email.
 	input := &ses.SendEmailInput{
 		Destination: &ses.Destination{
 			CcAddresses: []*string{},
 			ToAddresses: []*string{
-				aws.String(email),
+				aws.String(job.Target),
+			},
+		},
+		Tags: []*ses.MessageTag{
+			{
+				Name:  aws.String("template"),
+				Value: aws.String(template.TemplateId),
+			},
+			{
+				Name:  aws.String("locale"),
+				Value: aws.String(template.Locale),
 			},
 		},
 		Message: &ses.Message{
@@ -53,10 +80,6 @@ func (transport *sesTransport) Send(ctx context.Context, email, subject, textBod
 	}
 
 	// Attempt to send the email.
-	_, err := transport.ses.SendEmail(input)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err = transport.ses.SendEmail(input)
+	return errors.Wrap(err, "Failed to send email")
 }
