@@ -10,6 +10,7 @@ It also provides a decent API to manage these "communications" to a customer fro
 List of supported email transports
 
 - Mailgun
+- AWS SES
  
 ## SMS transports
 
