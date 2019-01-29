@@ -82,6 +82,9 @@ func PopulateTemplateCriteria(r *http.Request) TemplateCriteria {
 				criteria.Sorting[column] = split[1]
 			}
 		}
+	} else {
+		criteria.Sorting["template_id"] = "desc"
+		criteria.Sorting["locale"] = "asc"
 	}
 
 	return criteria
