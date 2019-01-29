@@ -84,7 +84,7 @@ func (repo *templateRepository) Matching(criteria communication.TemplateCriteria
 	}
 
 	for col, dir := range criteria.Sorting {
-		builder.OrderExpr("%s %s", types.F(col), types.Q(dir))
+		builder.OrderExpr("? ?", types.F(col), types.Q(dir))
 	}
 
 	count, err := builder.SelectAndCount()
