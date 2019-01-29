@@ -1,6 +1,7 @@
 package gopg
 
 import (
+	"github.com/go-pg/pg/types"
 	"time"
 
 	"github.com/go-pg/pg"
@@ -83,7 +84,7 @@ func (repo *templateRepository) Matching(criteria communication.TemplateCriteria
 	}
 
 	for col, dir := range criteria.Sorting {
-		builder.Order("%s %s", col, dir)
+		builder.OrderExpr("%s %s", types.F(col), types.Q(dir))
 	}
 
 	count, err := builder.SelectAndCount()
