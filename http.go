@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/interactive-solutions/go-communication/internal"
@@ -214,6 +215,83 @@ func (h *HttpHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.app.templateRepo.Delete(&template); err != nil {
 		http.Error(w, "Failed to delete template", 500)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *HttpHandler) GetEmailUnsubscriptions(w http.ResponseWriter, r *http.Request) {
+	email, ok := mux.Vars(r)["email"]
+	if !ok {
+		http.Error(w, "email arg missing in route definition", 422)
+		return
+	}
+
+	transport, ok := h.app.defaultEmailTransport.(TransportSupportsSubscriptionBlocking)
+	if !ok {
+		http.Error(w, "Transport does not support manage subscriptions", 500)
+		return
+	}
+
+	templates, err := transport.GetUnsubscribedTemplates(r.Context(), email)
+	if err != nil {
+		http.Error(w, "Failed to retrieve unsubscribed templates from transport", 500)
+		return
+	}
+
+	payload := struct {
+		Templates []string `json:"templates"`
+	}{Templates: templates}
+
+	if err := json.NewEncoder(w).Encode(payload); err != nil {
+		http.Error(w, "Failed to encode payload to json", 500)
+		return
+	}
+}
+
+func (h *HttpHandler) Resubscribe(w http.ResponseWriter, r *http.Request) {
+	transport, ok := h.app.defaultEmailTransport.(TransportSupportsSubscriptionBlocking)
+	if !ok {
+		http.Error(w, "Transport does not support manage subscriptions", 500)
+		return
+	}
+
+	body := &internal.ResubscribeRequest{}
+	if err := json.NewDecoder(r.Body).Decode(body); err != nil {
+		http.Error(w, "Failed to parse incoming json", 400)
+		return
+	}
+
+	if len(body.Templates) == 0 {
+		if err := transport.ResubscribeToAll(r.Context(), body.Email); err != nil {
+			http.Error(w, "Failed to resubscribe to all templates", 500)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+		}
+
+		return
+	}
+
+	var wg sync.WaitGroup
+	var err error
+
+	for _, template := range body.Templates {
+		wg.Add(1)
+
+		go func(t string) {
+			defer wg.Done()
+
+			if e := transport.ResubscribeToTemplate(r.Context(), body.Email, t); e != nil {
+				err = e
+			}
+		}(template)
+	}
+
+	wg.Wait()
+
+	if err != nil {
+		http.Error(w, "Failed to resubscribe to a template", 500)
 		return
 	}
 

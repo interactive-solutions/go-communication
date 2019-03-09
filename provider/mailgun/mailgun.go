@@ -43,6 +43,32 @@ func NewMailgunTransport(mailgunClient mailgun.Mailgun, options ...MailgunOption
 	return t
 }
 
+func (t *mailgunTransport) GetUnsubscribedTemplates(ctx context.Context, email string) ([]string, error) {
+	unsubscribes, err := t.mg.GetUnsubscribe(ctx, email)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to retrieve subscribes for %s", email)
+	}
+
+	return unsubscribes.Tags, nil
+}
+
+func (t *mailgunTransport) ResubscribeToAll(ctx context.Context, email string) error {
+	return errors.Wrapf(
+		t.mg.DeleteUnsubscribe(ctx, email),
+		"Failed to resubscribe email %s to all templates",
+		email,
+	)
+}
+
+func (t *mailgunTransport) ResubscribeToTemplate(ctx context.Context, email, template string) error {
+	return errors.Wrapf(
+		t.mg.DeleteUnsubscribeWithTag(ctx, email, template),
+		"Failed to remove unsubscription for email %s and template %s",
+		email,
+		template,
+	)
+}
+
 func (t *mailgunTransport) Send(ctx context.Context, job *communication.Job, template communication.Template, render communication.RenderFunc) error {
 
 	subject, err := render(template.Subject, job.Params)

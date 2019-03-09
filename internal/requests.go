@@ -15,3 +15,8 @@ type UpdateTemplateRequest struct {
 	HtmlBody string `json:"htmlBody"`
 	TextBody string `json:"textBody"`
 }
+
+type ResubscribeRequest struct {
+	Email     string   `json:"email"`
+	Templates []string `json:"templates"`
+}
