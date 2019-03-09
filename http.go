@@ -236,7 +236,7 @@ func (h *HttpHandler) GetEmailUnsubscriptions(w http.ResponseWriter, r *http.Req
 
 	templates, err := transport.GetUnsubscribedTemplates(r.Context(), email)
 	if err != nil {
-		http.Error(w, "Failed to retrieve unsubscribed templates from transport", 500)
+		http.Error(w, fmt.Sprintf("Failed to retrieve unsubscribed templates from transport: %s", err.Error()), 500)
 		return
 	}
 
@@ -245,7 +245,7 @@ func (h *HttpHandler) GetEmailUnsubscriptions(w http.ResponseWriter, r *http.Req
 	}{Templates: templates}
 
 	if err := json.NewEncoder(w).Encode(payload); err != nil {
-		http.Error(w, "Failed to encode payload to json", 500)
+		http.Error(w, fmt.Sprintf("Failed to encode payload to json: %s", err.Error()), 500)
 		return
 	}
 }
@@ -265,7 +265,7 @@ func (h *HttpHandler) Resubscribe(w http.ResponseWriter, r *http.Request) {
 
 	if len(body.Templates) == 0 {
 		if err := transport.ResubscribeToAll(r.Context(), body.Email); err != nil {
-			http.Error(w, "Failed to resubscribe to all templates", 500)
+			http.Error(w, fmt.Sprintf("Failed to resubscribe to all templates: %s", err.Error()), 500)
 		} else {
 			w.WriteHeader(http.StatusNoContent)
 		}
@@ -291,7 +291,7 @@ func (h *HttpHandler) Resubscribe(w http.ResponseWriter, r *http.Request) {
 	wg.Wait()
 
 	if err != nil {
-		http.Error(w, "Failed to resubscribe to a template", 500)
+		http.Error(w, fmt.Sprintf("Failed to resubscribe to a template: %s", err.Error()), 500)
 		return
 	}
 
