@@ -45,6 +45,13 @@ func NewMailgunTransport(mailgunClient mailgun.Mailgun, options ...MailgunOption
 
 func (t *mailgunTransport) GetUnsubscribedTemplates(ctx context.Context, email string) ([]string, error) {
 	unsubscribes, err := t.mg.GetUnsubscribe(ctx, email)
+
+	if mgErr, ok := err.(*mailgun.UnexpectedResponseError); ok {
+		if mgErr.Actual == 404 {
+			return []string{}, nil
+		}
+	}
+
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to retrieve subscribes for %s", email)
 	}
