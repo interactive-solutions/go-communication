@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/aws/aws-sdk-go v1.17.14
-	github.com/go-pg/pg v8.0.2+incompatible
+	github.com/go-pg/pg v6.15.1+incompatible
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.0
 	github.com/hashicorp/go-retryablehttp v0.5.2
