@@ -24,11 +24,19 @@ func SetReplyTo(reployTo string) MailgunOption {
 	}
 }
 
+func SetSkipText(skip bool) MailgunOption {
+	return func(e *mailgunTransport) error {
+		e.skipText = skip
+		return nil
+	}
+}
+
 type mailgunTransport struct {
 	mg mailgun.Mailgun
 
-	from    string
-	replyTo string
+	from     string
+	replyTo  string
+	skipText bool
 }
 
 func NewMailgunTransport(mailgunClient mailgun.Mailgun, options ...MailgunOption) communication.Transport {
@@ -83,14 +91,18 @@ func (t *mailgunTransport) Send(ctx context.Context, job *communication.Job, tem
 		return errors.Wrapf(err, "Failed to render subject for job %s template %s", job.Uuid, template.TemplateId)
 	}
 
-	textBody, err := render(template.TextBody, job.Params)
-	if err != nil {
-		return errors.Wrapf(err, "Failed to render text body for job %s template %s", job.Uuid, template.TemplateId)
-	}
-
 	htmlBody, err := render(template.HtmlBody, job.Params)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to render html body for job %s template %s", job.Uuid, template.TemplateId)
+	}
+
+	var textBody string
+
+	if !t.skipText {
+		textBody, err = render(template.TextBody, job.Params)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to render text body for job %s template %s", job.Uuid, template.TemplateId)
+		}
 	}
 
 	msg := t.mg.NewMessage(t.from, subject, textBody, job.Target)
